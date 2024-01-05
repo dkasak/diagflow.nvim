@@ -30,20 +30,39 @@ local function len(T)
     return count
 end
 
-local function wrap_text(text, max_width)
+local function wrap_line(line, max_width)
     local lines = {}
-    local line = ""
+    local wrapped_line = ""
 
-    for word in text:gmatch("%S+") do
-        if #line + #word + 1 > max_width then
-            table.insert(lines, line)
-            line = word
+    for word in line:gmatch("%S+") do
+        if #wrapped_line + #word + 1 > max_width then
+            table.insert(lines, wrapped_line)
+            wrapped_line = word
         else
-            line = line ~= "" and line .. " " .. word or word
+            wrapped_line = wrapped_line ~= "" and wrapped_line .. " " .. word or word
         end
     end
 
-    table.insert(lines, line)
+    table.insert(lines, wrapped_line)
+
+    return lines
+end
+
+local function wrap_text(text, max_width, keep_lines)
+    local original_lines = {}
+    local lines = {}
+
+    if keep_lines then
+        for line in text:gmatch("[^\r\n]+") do
+            table.insert(original_lines, line)
+        end
+    else
+        table.insert(original_lines, text)
+    end
+
+    for _, line in ipairs(original_lines) do
+        vim.list_extend(lines, wrap_line(line, max_width))
+    end
 
     return lines
 end
@@ -161,7 +180,7 @@ function M.init(config)
 
             local hl_group = severity[diag.severity]
             local sign = config.show_sign and signs[vim.diagnostic.severity[diag.severity]] .. " " or ""
-            local message_lines = wrap_text(sign .. diag_message, config.max_width)
+            local message_lines = wrap_text(sign .. diag_message, config.max_width, config.keep_lines)
             message_lines = create_boxed_text(message_lines, config.show_borders)
 
             local max_width = 0
@@ -250,3 +269,4 @@ end
 
 
 return M
+

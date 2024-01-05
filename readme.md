@@ -76,6 +76,7 @@ require('diagflow').setup({
       vertical = "│"
     },
     show_borders = false,
+    keep_lines = false, -- set to true to preserve formatting of multiline diagnostics
 })
 ```
 

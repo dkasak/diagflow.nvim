@@ -35,6 +35,7 @@ M.config = {
         vertical = "│"
     },
     show_borders = false,
+    keep_lines = false,
 }
 
 local error = function(message)
