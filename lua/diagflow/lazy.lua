@@ -176,20 +176,29 @@ function M.init(config)
         local win_width = vim.api.nvim_win_get_width(0) - vim.fn.getwininfo()[1].textoff - config.padding_right
         -- Render current_pos_diags
         local rendered_diags = {}
-        for _, diag in ipairs(current_pos_diags) do
+        for j, diag in ipairs(current_pos_diags) do
             local diag_message = config.format(diag)
 
             local hl_group = severity[diag.severity]
             local sign = config.show_sign and signs[vim.diagnostic.severity[diag.severity]] .. " " or ""
-            local message_lines = wrap_text(sign .. diag_message, config.max_width, config.keep_lines)
+            local message_lines = wrap_text(diag_message, config.max_width - #sign - 1, config.keep_lines)
+            for i, l in ipairs(message_lines) do
+                if i == 1 then
+                    message_lines[i] = sign .. l
+                else
+                    message_lines[i] = string.rep(" ", vim.fn.strdisplaywidth(sign)) .. l
+                end
+            end
             message_lines = create_boxed_text(message_lines, config.show_borders)
 
-            d = {
-                diag = diag,
-                message_lines = message_lines,
-                hl_group = hl_group,
-                sign = sign
+            local d = {
+              message_lines = message_lines,
+              hl_group = hl_group,
+              sign = sign,
+              col = diag.col,
+              lnum = diag.lnum,
             }
+
             table.insert(rendered_diags, d)
         end
 
@@ -215,7 +224,7 @@ function M.init(config)
                 lines_added = lines_added + 1
                 if config.placement == 'inline' then
                     local spacing = string.rep(" ", config.inline_padding_left)
-                    vim.api.nvim_buf_set_extmark(bufnr, ns, diag.diag.lnum, diag.diag.col, {
+                    vim.api.nvim_buf_set_extmark(bufnr, ns, diag.lnum, diag.col, {
                         virt_text_pos = 'eol',
                         virt_text = { { spacing .. message, diag.hl_group } },
                         virt_text_hide = true,
@@ -283,5 +292,4 @@ end
 
 
 return M
-
 
